@@ -28,6 +28,17 @@ public:
         imuData_(nullptr){
 
     }
+    void UpdateValue() {
+        if (imuData_ == nullptr) {
+            std::cout << "no imu msg" << std::endl;
+            return;
+        }
+        base_yaw_ = imuData_->yaw;
+        base_pitch_ = imuData_->pitch;
+        std::cout << "update success!" <<std::endl;
+        return;
+    }
+
     void setKeyboard(std::shared_ptr<Keyboard> keyboard){
         keyboard_ = keyboard;
     }

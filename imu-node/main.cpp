@@ -3,6 +3,9 @@
 #include <string.h>
 #include <unistd.h>
 #include <memory>
+#include <thread>
+#include <termio.h>
+#include <stdio.h>
 #include "WzSerialPort.h"
 #include "im948_CMD.h"
 #include "imu_data.h"
@@ -14,8 +17,47 @@ using namespace std;
 
 
 WzSerialPort w;
+bool pressboard = false;
+
 
 std::shared_ptr<ImuData> imuData = std::make_shared<ImuData>();
+
+int scanKeyboard()
+{
+    int in;
+    struct termios new_settings;
+    struct termios stored_settings;
+    tcgetattr(0,&stored_settings);
+    new_settings = stored_settings;
+    new_settings.c_lflag &= (~ICANON);
+    new_settings.c_cc[VTIME] = 0;
+    tcgetattr(0,&stored_settings);
+    new_settings.c_cc[VMIN] = 1;
+    tcsetattr(0,TCSANOW,&new_settings);
+
+    in = getchar();
+
+    tcsetattr(0,TCSANOW,&stored_settings);
+    return in;
+}
+
+
+int readkeyboard(std::shared_ptr<InputConvert> p)
+{
+    while(!pressboard)
+    {
+        int ascii = scanKeyboard();
+        printf(":%d\n",ascii);
+        if(ascii == 112) {
+            pressboard = true;
+            p->UpdateValue();
+            break;
+        }
+        if(ascii==27) break;
+    }
+    return 0;
+}
+
 
 
 int main(int argumentCount, const char* argumentValues[]) 
@@ -63,7 +105,10 @@ int main(int argumentCount, const char* argumentValues[])
 						Dbp("input convert fail \r\n");	
 						break;
 					}
-					send_msg(sock_cli,keyboard.get(),sizeof(Keyboard));
+					if(pressboard){
+						send_msg(sock_cli,keyboard.get(),sizeof(Keyboard));
+					}
+					usleep(15000);
 					break;
 				}
 				//Dbp("%02x ",buf[i]);
