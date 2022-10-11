@@ -66,11 +66,11 @@ public:
         float delta_pitch = imuData_->pitch - base_pitch_;
         if (fabs(delta_pitch) > pitch_thresh_) {
             if (delta_pitch > 0) {
-                keyboard_->up = true;
-                keyboard_->down = false;
-            } else {
                 keyboard_->up = false;
                 keyboard_->down = true;
+            } else {
+                keyboard_->up = true;
+                keyboard_->down = false;
             }
         } else {
             keyboard_->up = false;

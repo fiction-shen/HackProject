@@ -48,7 +48,7 @@ int readkeyboard(std::shared_ptr<InputConvert> p)
     {
         int ascii = scanKeyboard();
         printf(":%d\n",ascii);
-        if(ascii == 112) {
+        if(ascii == 112) {   //"p"
             pressboard = true;
             p->UpdateValue();
             break;

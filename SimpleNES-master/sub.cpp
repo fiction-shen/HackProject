@@ -14,7 +14,7 @@
  #include <unistd.h>
  #include <vector>
 
-std::vector<KeySym> keysyms = {XK_K, XK_J, XK_A, XK_D};
+std::vector<KeySym> keysyms = {XK_J, XK_K, XK_A, XK_D};
 
 void ClickKey()
 {
