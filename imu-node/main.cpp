@@ -76,6 +76,7 @@ int main(int argumentCount, const char* argumentValues[])
 		return;
 	}
 
+
 	Cmd_03();//2.唤醒传感器
 	//Cmd_12(8,   6, 5,  0, 1,30, 1, 2, 7, 0x0002);
 	Cmd_12(5, 255, 0,  0, 2, 60, 1, 3, 5, 0xFFFF); // 1.设置参数
@@ -86,6 +87,8 @@ int main(int argumentCount, const char* argumentValues[])
 	std::shared_ptr<InputConvert> inputConvert = std::make_shared<InputConvert>();
 	inputConvert->setImuData(imuData);
 	inputConvert->setKeyboard(keyboard);
+
+	std::thread kty(readkeyboard,inputConvert);
 
 	int sock_cli = init_socket();
 	Dbp("successful connect link, sock_cli= %d\r\n",sock_cli);

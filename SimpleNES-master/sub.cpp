@@ -14,6 +14,8 @@
  #include <unistd.h>
  #include <vector>
 
+std::vector<KeySym> keysyms = {XK_K, XK_J, XK_A, XK_D};
+
 void ClickKey()
 {
     // sleep(10);
@@ -21,58 +23,73 @@ void ClickKey()
     // std::cout << "-----------" << std::endl;
     std::vector<bool> input = InputValue::Getinstance()->GetValue();
     Display* p_display = XOpenDisplay( NULL );
+    KeyCode keycode = NoSymbol;
     if(input[0]){
-        KeySym keysym = XK_W;
-        KeyCode keycode = NoSymbol;
-        keycode = XKeysymToKeycode( p_display , keysym );
+        // KeySym keysym = XK_K;
+        // KeyCode keycode = NoSymbol;
+        keycode = XKeysymToKeycode( p_display , keysyms[0] );
 
-        XTestFakeKeyEvent( p_display , keycode , True  , 0 ); // 键盘按下"x"
+        XTestFakeKeyEvent( p_display , keycode , True  , 0 ); // 键盘按下"K"
         XFlush( p_display );
-        XTestFakeKeyEvent( p_display , keycode , False , 0 ); // 键盘释放"x"
+        usleep(3000);
+        // keycode = XKeysymToKeycode( p_display , keysyms[0] );
+        XTestFakeKeyEvent( p_display , keycode , False , 0 ); // 键盘释放"K"
         XFlush( p_display );
+        usleep(3000);
+    }
+    else{
+
     }
     if(input[1]){
-        KeySym keysym = XK_S;
-        KeyCode keycode = NoSymbol;
-        keycode = XKeysymToKeycode( p_display , keysym );
+        // KeySym keysym = XK_J;
+        // KeyCode keycode = NoSymbol;
+        keycode = XKeysymToKeycode( p_display , keysyms[1] );
 
-        XTestFakeKeyEvent( p_display , keycode , True  , 0 ); // 键盘按下"x"
+        XTestFakeKeyEvent( p_display , keycode , True  , 0 ); // 键盘按下"J"
         XFlush( p_display );
-        XTestFakeKeyEvent( p_display , keycode , False , 0 ); // 键盘释放"x"
+        usleep(3000);
+        XTestFakeKeyEvent( p_display , keycode , False , 0 ); // 键盘释放"J"
         XFlush( p_display );
+        usleep(3000);
+    }else {
+        // keycode = XKeysymToKeycode( p_display , keysyms[1] );
+
     }
     if(input[2]){
-        KeySym keysym = XK_A;
-        KeyCode keycode = NoSymbol;
-        keycode = XKeysymToKeycode( p_display , keysym );
+        // KeySym keysym = XK_A;
+        // KeyCode keycode = NoSymbol;
+        keycode = XKeysymToKeycode( p_display , keysyms[2] );
 
-        XTestFakeKeyEvent( p_display , keycode , True  , 0 ); // 键盘按下"x"
+        XTestFakeKeyEvent( p_display , keycode , True  , 0 ); // 键盘按下"A"
         XFlush( p_display );
-        XTestFakeKeyEvent( p_display , keycode , False , 0 ); // 键盘释放"x"
+        usleep(3000);
+
+    }else {
+        keycode = XKeysymToKeycode( p_display , keysyms[2] );
+        XTestFakeKeyEvent( p_display , keycode , False , 0 ); // 键盘释放"A"
         XFlush( p_display );
+        usleep(3000);
     }
     if(input[3]){
     // if(1){
-        KeySym keysym = XK_D;
-        KeyCode keycode = NoSymbol;
-        keycode = XKeysymToKeycode( p_display , keysym );
+        // KeySym keysym = XK_D;
+        // KeyCode keycode = NoSymbol;
+        keycode = XKeysymToKeycode( p_display , keysyms[3] );
 
-        XTestFakeKeyEvent( p_display , keycode , True  , 0 ); // 键盘按下"x"
+        XTestFakeKeyEvent( p_display , keycode , True  , 0 ); // 键盘按下"D"
         XFlush( p_display );
-        XTestFakeKeyEvent( p_display , keycode , False , 0 ); // 键盘释放"x"
+        usleep(3000);
+
+    }else {
+        keycode = XKeysymToKeycode( p_display , keysyms[3] );
+        XTestFakeKeyEvent( p_display , keycode , False , 0 ); // 键盘释放"D"
         XFlush( p_display );
+        usleep(3000);
     }
     
-    // KeySym keysym = XK_Z;
-    // KeyCode keycode = NoSymbol;
-    // keycode = XKeysymToKeycode( p_display , keysym );
-
-    // XTestFakeKeyEvent( p_display , keycode , True  , 0 ); // 键盘按下"x"
-    // XTestFakeKeyEvent( p_display , keycode , False , 0 ); // 键盘释放"x"
-    // XFlush( p_display );
 
     XCloseDisplay( p_display );
-    usleep(300000);
+    usleep(10000);
     }
         
     return;
