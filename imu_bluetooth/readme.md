@@ -3,7 +3,10 @@
 
 
 ### 使用方法
+启动蓝牙：每次开机后需要手动启动一次蓝牙
+sudo /usr/bin/startbt6212.sh
 
+连接imu：
 python3 imu_node.py [蓝牙MAC地址] [PC的ip]
 
 我们有两个imu，一个是IM900,一个是IM948,两个蓝牙的MAC地址是固定不变的。
