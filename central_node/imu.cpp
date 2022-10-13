@@ -33,7 +33,7 @@ int parse_imu(U8 *buf, U8 DLen, std::shared_ptr<ImuData> imuData) {
     
     ctl = ((U16)buf[2] << 8) | buf[1];// 字节[2-1] 为功能订阅标识，指示当前订阅了哪些功能
     printf("\t subscribe tag: 0x%04X\r\n", ctl);
-    printf("\t ms: %u\r\n", (U32)(((U32)buf[6]<<24) | ((U32)buf[5]<<16) | ((U32)buf[4]<<8) | ((U32)buf[3]<<0))); // 字节[6-3] 为模块开机后的时间戳(单位ms)
+    printf("\t ms: %lu\r\n", (U32)(((U32)buf[6]<<24) | ((U32)buf[5]<<16) | ((U32)buf[4]<<8) | ((U32)buf[3]<<0))); // 字节[6-3] 为模块开机后的时间戳(单位ms)
 
     L =7; // 从第7字节开始根据 订阅标识tag来解析剩下的数据
     if ((ctl & 0x0001) != 0)
@@ -126,7 +126,7 @@ int parse_imu(U8 *buf, U8 DLen, std::shared_ptr<ImuData> imuData) {
     }
     if ((ctl & 0x0100) != 0)
     {// 活动检测数据
-        tmpU32 = (U32)(((U32)buf[L+3]<<24) | ((U32)buf[L+2]<<16) | ((U32)buf[L+1]<<8) | ((U32)buf[L]<<0)); L += 4; printf("\tsteps: %u\r\n", tmpU32); // 计步数   
+        tmpU32 = (U32)(((U32)buf[L+3]<<24) | ((U32)buf[L+2]<<16) | ((U32)buf[L+1]<<8) | ((U32)buf[L]<<0)); L += 4; printf("\tsteps: %lu\r\n", tmpU32); // 计步数   
         tmpU8 = buf[L]; L += 1;
         printf("\t walking: %s\r\n", (tmpU8 & 0x01)?  "yes" : "no"); // 是否在走路
         printf("\t running: %s\r\n", (tmpU8 & 0x02)?  "yes" : "no"); // 是否在跑步

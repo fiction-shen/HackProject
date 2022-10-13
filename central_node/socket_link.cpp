@@ -8,6 +8,7 @@
 #include <unistd.h>
 
 #include "socket_link.h"
+#include "imu.h"
 
 #define HELLO_WORLD_SERVER_PORT    6666
 #define LENGTH_OF_LISTEN_QUEUE     20
@@ -88,6 +89,66 @@ SocketLink::~SocketLink()
 }
 
 static void * SocketLink::task_for_client(void *arg) {
+    struct pthread_data *pdata = (struct pthread_data*)arg;
+    int new_server_socket = pdata->sock_fd;
 
+    int needRecv=73; // 蓝牙一帧数据的长度
+    char *buffer=(char*)malloc(needRecv);
+    char *buffer_head=(char*)malloc(needRecv);
+    char *buffer_complect=(char*)malloc(needRecv);
+    memset(buffer_head,0,needRecv);  
+    memset(buffer_complect,0,needRecv);
+
+
+    while(1){
+         int pos=0;
+         int len;
+         memset(buffer,0,needRecv);
+        
+
+         while(pos < needRecv) {
+            len = recv(new_server_socket, buffer+pos, needRecv, MSG_WAITALL);          
+            if (len < 0) {
+                printf("Server Recieve Data Failed!\n");
+                break;
+            }
+            pos+=len;
+         }
+        printf("recv over, len=%d\n",len);
+        
+        // 拆包
+        {
+            // search帧头 0x11 0xff
+            int index = -1;
+            for (int i=0; i<needRecv-1; i++) {
+                if (buffer[i] == 0x11 && buffer[i+1] == 0xff) {
+                    index = i;
+                    break;
+                }
+            }
+            if (index == -1) {
+                printf("frame error \n");
+            } else {
+                int tail_length = index;
+                int head_length = needRecv - index;
+
+                memcpy(buffer_complect,buffer_head,head_length); //帧头
+                memcpy(buffer_complect+head_length,buffer,tail_length); //帧尾
+
+                memset(buffer_head,0,needRecv);
+                memcpy(buffer_head,buffer+index,head_length); //存储帧头
+            }
+        }
+        // 解析
+        {
+            parse_imu((unsigned char*)buffer_complect,len,std::make_shared<ImuData>());
+        }
+
+        for(int i=0; i<needRecv; i++) {
+            printf("%x ",buffer_complect[i]);
+        }    
+        printf("\n"); 
+    }
+    pthread_exit(0);
 
 }
