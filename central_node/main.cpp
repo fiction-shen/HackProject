@@ -16,8 +16,6 @@ int main(int argc, char **argv) {
     SocketLink server_socket;
     server_socket.init_socket();
 
-
-
     while(1)
     {
         server_socket.socket_monitor();
