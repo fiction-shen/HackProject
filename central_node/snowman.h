@@ -9,19 +9,17 @@ private:
     /* data */
     std::vector<std::shared_ptr<ImuData>> imu_vec_;
     
-    
-
     float base_yaw_;
     float yaw_thresh_;
     
-    float wx_thresh_;
+    float wy_thresh_;
 
 public:
-    Snowman(/* args */);
+    Snowman();
     ~Snowman();
 };
 
-Snowman::Snowman(/* args */)
+Snowman::Snowman()
 {
 }
 
