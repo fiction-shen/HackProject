@@ -13,6 +13,7 @@ import sys
 class AnyDevice(gatt.Device):
 
     sock_pc = None
+    parse_imu_flage = False
 
     def connect_succeeded(self):
         super().connect_succeeded()
@@ -43,6 +44,10 @@ class AnyDevice(gatt.Device):
 
         # 唤醒 0x03
         lzchar1.write_value(bytes([0x03]))
+
+        # GPIO 上拉
+        lzchar1.write_value(bytes([0x27,0x10]))
+
 
         # 参数设置
         isCompassOn = 1
@@ -97,6 +102,9 @@ class AnyDevice(gatt.Device):
         #self.parse_imu(value)
         
         if characteristic.uuid == '0000ae02-0000-1000-8000-00805f9b34fb'.lower():
+            if self.parse_imu_flage:
+                self.parse_imu(value)
+
             if self.sock_pc is not None:
                 print("send blue source data")
                 self.sock_pc.sendall(value)
@@ -299,10 +307,10 @@ class AnyDevice(gatt.Device):
 
 arg_parser = ArgumentParser(description="GATT Connect Demo")
 arg_parser.add_argument('mac_address', help="MAC address of device to connect")
-arg_parser.add_argument('host_ip', help="HOST ip address of device to connect")
+arg_parser.add_argument('host_ip', help="HOST ip address of device to connect", nargs='?', default=None)
 args = arg_parser.parse_args()
 
-print("Connecting...")
+
 
 
 host = args.host_ip
@@ -318,10 +326,14 @@ if host is not None:
         input("Press enter to quit")
         sys.exit(0)
 
-    
+
+print("Connecting bluetooth ...")
+
 manager = gatt.DeviceManager(adapter_name='hci0')
 device = AnyDevice(manager=manager, mac_address=args.mac_address)
 device.sock_pc = sock
+if host is None:
+    device.parse_imu_flage = True
 
 device.connect()
 
