@@ -26,3 +26,4 @@ ${DIR_SRCS}
 
 #6.add executable file，添加要编译的可执行文件
 ADD_EXECUTABLE(${PROJECT_NAME} ${TEST_MATH})
+target_link_libraries(${PROJECT_NAME} -lX11 -lXtst)

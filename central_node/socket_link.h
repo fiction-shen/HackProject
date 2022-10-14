@@ -3,6 +3,7 @@
 
 #include <vector>
 #include <memory>
+#include "imu.h"
 
 
 class SocketLink
@@ -26,7 +27,10 @@ public:
     int socket_monitor();
 
     static void *task_for_client(void *arg);
+    static std::shared_ptr<ImuData> receive_imu_;
 };
+
+
 
 
 

@@ -1,0 +1,1 @@
+/usr/bin/c++   -std=c++11 -pthread -fpermissive   CMakeFiles/central_node.dir/gesture.cpp.o CMakeFiles/central_node.dir/imu.cpp.o CMakeFiles/central_node.dir/main.cpp.o CMakeFiles/central_node.dir/snowman.cpp.o CMakeFiles/central_node.dir/socket_link.cpp.o  -o central_node  -lX11 -lXtst 

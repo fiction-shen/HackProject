@@ -9,13 +9,14 @@
 
 #include "socket_link.h"
 #include "imu.h"
+#include "keyboard_simulate.h"
 
 #define HELLO_WORLD_SERVER_PORT    6666
 #define LENGTH_OF_LISTEN_QUEUE     20
 #define BUFFER_SIZE                1024
 
 
-
+std::shared_ptr<ImuData> SocketLink::receive_imu_ = std::make_shared<ImuData>();
 
 SocketLink::SocketLink(): 
     server_socket_(-1) {
@@ -88,7 +89,7 @@ SocketLink::~SocketLink()
     close(server_socket_);
 }
 
-static void * SocketLink::task_for_client(void *arg) {
+void * SocketLink::task_for_client(void *arg) {
     struct pthread_data *pdata = (struct pthread_data*)arg;
     int new_server_socket = pdata->sock_fd;
 
@@ -99,6 +100,7 @@ static void * SocketLink::task_for_client(void *arg) {
     memset(buffer_head,0,needRecv);  
     memset(buffer_complect,0,needRecv);
 
+    KeyboardBase keyb;
 
     while(1){
          int pos=0;
@@ -141,8 +143,11 @@ static void * SocketLink::task_for_client(void *arg) {
         }
         // 解析
         {
-            parse_imu((unsigned char*)buffer_complect,len,std::make_shared<ImuData>());
+            parse_imu((unsigned char*)buffer_complect,len, receive_imu_);
+
+            keyb.ProcMsg(receive_imu_);
         }
+
 
         for(int i=0; i<needRecv; i++) {
             printf("%x ",buffer_complect[i]);
