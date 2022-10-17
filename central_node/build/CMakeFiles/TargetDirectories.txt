@@ -1,3 +1,0 @@
-/home/szh_ubuntu20/Project/Hackson/HackProject/central_node/build/CMakeFiles/rebuild_cache.dir
-/home/szh_ubuntu20/Project/Hackson/HackProject/central_node/build/CMakeFiles/edit_cache.dir
-/home/szh_ubuntu20/Project/Hackson/HackProject/central_node/build/CMakeFiles/central_node.dir

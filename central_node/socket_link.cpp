@@ -9,7 +9,7 @@
 
 #include "socket_link.h"
 #include "imu.h"
-#include "keyboard_simulate.h"
+
 
 #define HELLO_WORLD_SERVER_PORT    6666
 #define LENGTH_OF_LISTEN_QUEUE     20
@@ -100,7 +100,6 @@ void * SocketLink::task_for_client(void *arg) {
     memset(buffer_head,0,needRecv);  
     memset(buffer_complect,0,needRecv);
 
-    KeyboardBase keyb;
 
     while(1){
          int pos=0;
@@ -145,7 +144,7 @@ void * SocketLink::task_for_client(void *arg) {
         {
             parse_imu((unsigned char*)buffer_complect,len, receive_imu_);
 
-            keyb.ProcMsg(receive_imu_);
+            // keyb.ProcMsg(receive_imu_);
         }
 
 
