@@ -122,7 +122,7 @@ void * SocketLink::task_for_client(void *arg) {
             // search帧头 0x11 0xff
             int index = -1;
             for (int i=0; i<needRecv-1; i++) {
-                if (buffer[i] == 0x11 && buffer[i+1] == 0xff) {
+                if ((unsigned char)buffer[i] == 0x11 && (unsigned char)buffer[i+1] == 0xff) {
                     index = i;
                     break;
                 }
