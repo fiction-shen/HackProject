@@ -16,7 +16,7 @@
 #define BUFFER_SIZE                1024
 
 
-std::shared_ptr<ImuData> SocketLink::receive_imu_ = std::make_shared<ImuData>();
+
 
 SocketLink::SocketLink(): 
     server_socket_(-1) {
@@ -31,7 +31,6 @@ int SocketLink::init_socket() {
      server_addr.sin_family = AF_INET;
      server_addr.sin_addr.s_addr = htons(INADDR_ANY);
      server_addr.sin_port = htons(HELLO_WORLD_SERVER_PORT);
-     
  
      // create a stream socket
      server_socket_ = socket(PF_INET, SOCK_STREAM, 0);
@@ -54,8 +53,6 @@ int SocketLink::init_socket() {
          printf("Server Listen Failed!\n");
          return 0;
      }
-
-
      return 1;
 }
 
@@ -73,13 +70,18 @@ int SocketLink::socket_monitor() {
 
     printf("new client connection is build \n");
 
-    new_server_sockets_.push_back(new_server_socket);
-    threads_.push_back(new pthread_t());
+    std::shared_ptr<SocketState> socket_state = std::make_shared<SocketState>();
+    socket_state->sock_fd = new_server_socket;
+    socket_state->sensor_type = 0; //未知传感器类型
+    socket_state->state = 1;   //正常连接
+    new_server_sockets_.push_back(socket_state);
+    pthread_t thread_id;
+    
     struct pthread_data pdata;
-
     pdata.client_addr = client_addr;
     pdata.sock_fd = new_server_socket;
-    pthread_create(threads_[threads_.size()-1],NULL,task_for_client,(void *)&pdata);
+
+    pthread_create(&thread_id,NULL,task_for_client,(void *)&pdata);
 
     return 1;
 }
@@ -88,6 +90,13 @@ SocketLink::~SocketLink()
 {
     close(server_socket_);
 }
+
+
+
+
+std::vector<std::shared_ptr<SocketState>> SocketLink::new_server_sockets_;
+std::map<int,std::shared_ptr<ImuData>> SocketLink::sockfd_bind_imu_;
+std::shared_ptr<ImuData> SocketLink::receive_imu_;
 
 void * SocketLink::task_for_client(void *arg) {
     struct pthread_data *pdata = (struct pthread_data*)arg;
@@ -100,13 +109,10 @@ void * SocketLink::task_for_client(void *arg) {
     memset(buffer_head,0,needRecv);  
     memset(buffer_complect,0,needRecv);
 
-
     while(1){
          int pos=0;
          int len;
          memset(buffer,0,needRecv);
-        
-
          while(pos < needRecv) {
             len = recv(new_server_socket, buffer+pos, needRecv, MSG_WAITALL);          
             if (len < 0) {
@@ -121,38 +127,60 @@ void * SocketLink::task_for_client(void *arg) {
         {
             // search帧头 0x11 0xff
             int index = -1;
+            int sensor_type = -1; // 1: imu; 2: gesture
             for (int i=0; i<needRecv-1; i++) {
                 if ((unsigned char)buffer[i] == 0x11 && (unsigned char)buffer[i+1] == 0xff) {
                     index = i;
+                    sensor_type = 1;
                     break;
                 }
             }
             if (index == -1) {
                 printf("frame error \n");
             } else {
-                int tail_length = index;
-                int head_length = needRecv - index;
+                if (sensor_type == 1) {   //imu
+                    int tail_length = index;
+                    int head_length = needRecv - index;
 
-                memcpy(buffer_complect,buffer_head,head_length); //帧头
-                memcpy(buffer_complect+head_length,buffer,tail_length); //帧尾
+                    memcpy(buffer_complect,buffer_head,head_length); //帧头
+                    memcpy(buffer_complect+head_length,buffer,tail_length); //帧尾
 
-                memset(buffer_head,0,needRecv);
-                memcpy(buffer_head,buffer+index,head_length); //存储帧头
+                    memset(buffer_head,0,needRecv);
+                    memcpy(buffer_head,buffer+index,head_length); //存储帧头 
+                    
+                    int index = -1;
+                    for (int i=0; i<new_server_sockets_.size(); i++) {
+                        if (new_server_sockets_[i]->sock_fd == new_server_socket) {
+                            index = i;
+                            break;
+                        }
+                    }
+                    if (index == -1) {
+                        printf("thread error \n");
+                    }
+
+                    // 解析
+                    std::shared_ptr<ImuData> receive_imu = std::make_shared<ImuData>();
+                    parse_imu((unsigned char*)buffer_complect,len, receive_imu);
+                    // if (sockfd_bind_imu_.find(new_server_socket) == sockfd_bind_imu_.end()) {
+
+                    // }
+                    // sockfd_bind_imu_[new_server_socket] = receive_imu_;
+                    
+                } else if (sensor_type == 2) { //手势
+
+                }
+                       
             }
         }
-        // 解析
-        {
-            parse_imu((unsigned char*)buffer_complect,len, receive_imu_);
-
-            // keyb.ProcMsg(receive_imu_);
-        }
-
 
         for(int i=0; i<needRecv; i++) {
             printf("%x ",buffer_complect[i]);
         }    
         printf("\n"); 
     }
+
+    printf("thread normal exit \n");
     pthread_exit(0);
 
 }

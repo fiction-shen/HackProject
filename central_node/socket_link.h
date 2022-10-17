@@ -2,9 +2,15 @@
 #define __SOCKET_LINK_H_
 
 #include <vector>
+#include <map>
 #include <memory>
 #include "imu.h"
 
+typedef struct {
+    int sock_fd;
+    bool state;
+    int sensor_type;
+}SocketState;
 
 class SocketLink
 {
@@ -13,12 +19,11 @@ private:
         struct sockaddr_in client_addr;
         int sock_fd;
     };
-    /* data */
-    std::vector<pthread_t*> threads_;
-    struct pthread_data pdata_;
 
+    struct pthread_data pdata_;
     int server_socket_;
-    std::vector<int> new_server_sockets_;
+
+    
 public:
     SocketLink();
     ~SocketLink();
@@ -28,6 +33,10 @@ public:
 
     static void *task_for_client(void *arg);
     static std::shared_ptr<ImuData> receive_imu_;
+
+    /* data */
+    static std::vector<std::shared_ptr<SocketState>> new_server_sockets_;
+    static std::map<int,std::shared_ptr<ImuData>> sockfd_bind_imu_;
 };
 
 
