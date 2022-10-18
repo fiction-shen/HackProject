@@ -5,6 +5,7 @@
 #include <map>
 #include <memory>
 #include "imu.h"
+#include "gesture.h"
 
 typedef struct {
     int sock_fd;
@@ -33,6 +34,7 @@ public:
 
     static void *task_for_client(void *arg);
     static std::shared_ptr<ImuData> receive_imu_;
+    static std::shared_ptr<GstData> receive_gst_;
 
     /* data */
     static std::vector<std::shared_ptr<SocketState>> new_server_sockets_;
