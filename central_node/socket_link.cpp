@@ -84,6 +84,7 @@ std::vector<std::shared_ptr<SocketState>> SocketLink::new_server_sockets_;
 std::map<int, std::shared_ptr<ImuData>> SocketLink::sockfd_bind_imu_;
 std::shared_ptr<ImuData> SocketLink::receive_imu_ = std::make_shared<ImuData>();
 std::shared_ptr<GstData> SocketLink::receive_gst_ = std::make_shared<GstData>();
+std::shared_ptr<PstData> SocketLink::receive_pst_ = std::make_shared<PstData>();
 void *SocketLink::task_for_client(void *arg) {
   struct pthread_data *pdata = (struct pthread_data *)arg;
   int new_server_socket = pdata->sock_fd;
@@ -93,6 +94,7 @@ void *SocketLink::task_for_client(void *arg) {
   char *buffer_head = (char *)malloc(needRecv);
   char *buffer_complect = (char *)malloc(needRecv);
   int *gstmsg_ = (int *)malloc(sizeof(int));
+  int *pstmsg_ = (int *)malloc(sizeof(int));
   memset(buffer_head, 0, needRecv);
   memset(buffer_complect, 0, needRecv);
 
@@ -131,6 +133,11 @@ void *SocketLink::task_for_client(void *arg) {
                  (unsigned char)buffer[i + 1] == 0xff) {
         index = i;
         sensor_type = 2;
+        break;
+      } else if ((unsigned char)buffer[i] == 0x33 &&
+                 (unsigned char)buffer[i + 1] == 0xff) {
+        index = i;
+        sensor_type = 3;
         break;
       }
     }
@@ -174,6 +181,12 @@ void *SocketLink::task_for_client(void *arg) {
 
         parse_gst(gstmsg_, receive_gst_);
         printf("recived gesture:%d", receive_gst_->gstcode);
+      } else if (sensor_type == 3) {  //姿态
+
+        memcpy(pstmsg_, buffer + 2, sizeof(int));  //帧头
+
+        parse_pst(pstmsg_, receive_pst_);
+        printf("recived gesture:%d", receive_pst_->pstcode);
       }
     }
 
