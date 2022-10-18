@@ -10,6 +10,7 @@
 #include <map>
 #include "imu.h"
 #include "socket_link.h"
+#include "gesture.h"
 // #include <unordered_map>
 
 
@@ -61,7 +62,8 @@ public:
         keyboardset_.insert(std::make_pair<std::string, PressKey*>("Down", new PressKey(XK_Down)));
         keyboardset_.insert(std::make_pair<std::string, PressKey*>("Left", new PressKey(XK_Left)));
         keyboardset_.insert(std::make_pair<std::string, PressKey*>("Right", new PressKey(XK_Right)));
-        init_ = false;
+        imuinit_ = false;
+        gesture_ = 0;
     }
 
     ~KeyboardBase() {
@@ -72,20 +74,22 @@ public:
      }
 
     int Init() {
-        if(init_) {
+        if(imuinit_) {
             std::cout << "error: key board has been init" <<std::endl;
             return -1;
         }
         //获取手势进行感知量初始化
-        while(1) {
-            if(0){      //预留的手势接口
+//        while(1) 
+        {
+            if(SocketLink::receive_gst_->gstcode == 11){      //预留的手势接口
                 std::cout << "\ngesture is success!" << std::endl;
                 InitValue(SocketLink::receive_imu_); 
-                init_ = true;
+                imuinit_ = true;
                 std::cout << "----keyboard init success!----" << std::endl;
+                usleep(500000);
                 return 0;
             } else {
-                std::cout << "\r----please make a start gesture----";
+                std::cout << "\r----please make a ok gesture----";
                 std::fflush(stdout);
             }
             usleep(500000);
@@ -99,17 +103,25 @@ public:
         pitch_base = imuData->pitch;
     }
 
+    void Proc() {
+        while(1) {
+            ProcMsg(SocketLink::receive_imu_);
+            ProGst(SocketLink::receive_gst_);
+        }
+        return;
+    }
+
     void ProcMsg(std::shared_ptr<ImuData> imuData) {
-        while(1) 
+//        while(1) 
         {
             if(imuData == nullptr) {
                 std::cout << "----imudata is null----" <<std::endl;
                 return;
             }
-            if(!init_) {
-                std::cout << "----keyboard has no init----" << std::endl;
+            if(!imuinit_) {
+                std::cout << "----keyboard has no init----";
                 Init();
-                // return;
+                return;
             }
             float roll = imuData->roll;
             float pitch = imuData->pitch;
@@ -143,6 +155,60 @@ public:
 
             ClickKey();
         }
+        return;
+    }
+
+    void ProGst(std::shared_ptr<GstData> gstdata) {
+        Display* p_display = XOpenDisplay( NULL );
+        KeyCode keycode = NoSymbol;
+        int num = gstdata->gstcode;
+        if (num == gesture_){
+            return;
+        }
+        switch(num) {
+            case 4 : {
+                KeySym tmp = XK_F1;
+                keycode = XKeysymToKeycode(p_display, tmp);
+            }
+                break;//嘘，开关声音
+            case 12 : {
+                KeySym tmp = XK_A;
+                keycode = XKeysymToKeycode(p_display, tmp);
+            }
+                break;//大拇指向左，选择向左
+            case 13 : {
+                KeySym tmp = XK_D;
+                keycode = XKeysymToKeycode(p_display, tmp);
+            }
+                break;//大拇指向右，选择向右
+            case 5 : {
+                KeySym tmp = XK_space;
+                keycode = XKeysymToKeycode(p_display, tmp);
+            }
+                break;//手掌，暂停游戏
+            case 3 : {
+                KeySym tmp = XK_Return;
+                keycode = XKeysymToKeycode(p_display, tmp);
+            }
+                break;//比耶，确定
+            case 14 : {
+                KeySym tmp = XK_Escape;
+                keycode = XKeysymToKeycode(p_display, tmp);
+            }
+
+                break;//666，离开游戏
+            default : gesture_ = 0 ; return;
+        }
+        gesture_ = num;
+        XTestFakeKeyEvent(p_display , keycode , True  , 0 );
+        XFlush( p_display );
+        usleep(3000);
+        XTestFakeKeyEvent(p_display , keycode , False , 0 );
+        XFlush( p_display );
+        usleep(3000);
+        XFlush(p_display);
+        XCloseDisplay(p_display);
+        // usleep(10000);
         return;
     }
 
@@ -181,7 +247,7 @@ public:
         }
         XFlush(p_display);
         XCloseDisplay(p_display);
-        usleep(10000);
+        // usleep(10000);
         
         return;
     }
@@ -190,13 +256,14 @@ public:
 
 protected:
     std::map<std::string, PressKey*> keyboardset_;
-    bool init_;
+    bool imuinit_;
     float pitch_base;
     float pitch_th;
     float yaw_base;
     float yaw_th;
     float roll_base;
     float roll_th;
+    int gesture_;
 };
 
 #endif

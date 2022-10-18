@@ -160,8 +160,8 @@ void *SocketLink::task_for_client(void *arg) {
         }
 
         // 解析
-        std::shared_ptr<ImuData> receive_imu = std::make_shared<ImuData>();
-        parse_imu((unsigned char *)buffer_complect, len, receive_imu);
+        // std::shared_ptr<ImuData> receive_imu = std::make_shared<ImuData>();
+        parse_imu((unsigned char *)buffer_complect, len, receive_imu_);
         // if (sockfd_bind_imu_.find(new_server_socket) ==
         // sockfd_bind_imu_.end()) {
 
