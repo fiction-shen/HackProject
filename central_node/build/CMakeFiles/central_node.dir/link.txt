@@ -1,0 +1,3 @@
+D:\Program\cmake\bin\cmake.exe -E rm -f CMakeFiles\central_node.dir/objects.a
+C:\TDM-GCC-64\bin\ar.exe qc CMakeFiles\central_node.dir/objects.a @CMakeFiles\central_node.dir\objects1.rsp
+C:\TDM-GCC-64\bin\c++.exe  -std=c++11 -pthread -fpermissive -Wl,--whole-archive CMakeFiles\central_node.dir/objects.a -Wl,--no-whole-archive -o central_node.exe -Wl,--out-implib,libcentral_node.dll.a -Wl,--major-image-version,0,--minor-image-version,0 @CMakeFiles\central_node.dir\linklibs.rsp
