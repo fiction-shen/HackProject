@@ -84,6 +84,7 @@ std::vector<std::shared_ptr<SocketState>> SocketLink::new_server_sockets_;
 std::map<int, std::shared_ptr<ImuData>> SocketLink::sockfd_bind_imu_;
 std::shared_ptr<ImuData> SocketLink::receive_imu_ = std::make_shared<ImuData>();
 std::shared_ptr<GstData> SocketLink::receive_gst_ = std::make_shared<GstData>();
+
 std::shared_ptr<PstData> SocketLink::receive_pst_ = std::make_shared<PstData>();
 void *SocketLink::task_for_client(void *arg) {
   struct pthread_data *pdata = (struct pthread_data *)arg;
@@ -115,7 +116,7 @@ void *SocketLink::task_for_client(void *arg) {
     //   printf("%x ", buffer[i]);
     // }
     // printf("\n");
-    printf("recv over, len=%d\n", len);
+    // printf("recv over, len=%d\n", len);
 
     // 拆包
 
@@ -181,19 +182,13 @@ void *SocketLink::task_for_client(void *arg) {
 
         parse_gst(gstmsg_, receive_gst_);
         printf("recived gesture:%d", receive_gst_->gstcode);
-      } else if (sensor_type == 3) {  //姿态
-
-        memcpy(pstmsg_, buffer + 2, sizeof(int));  //帧头
-
-        parse_pst(pstmsg_, receive_pst_);
-        printf("recived gesture:%d", receive_pst_->pstcode);
       }
     }
 
     // for (int i = 0; i < needRecv; i++) {
     //   printf("%x ", buffer_complect[i]);
     // }
-    printf("\n");
+    // printf("\n");
   }
 
   printf("thread normal exit \n");

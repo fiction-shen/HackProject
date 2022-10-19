@@ -59,7 +59,7 @@ typedef struct {
     float N_az;
 
     float ADC;
-    float GPIO;
+    int GPIO;
     
 }ImuData;
 

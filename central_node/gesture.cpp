@@ -16,4 +16,5 @@
 int parse_gst(int *gstmsg_, std::shared_ptr<GstData> gstdata) {
   gstdata->gstcode = static_cast<int>(*gstmsg_);
   //gettimeofday(&gstdata->tv, &gstdata->tz);
+  return 0;
 };

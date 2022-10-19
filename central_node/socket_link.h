@@ -39,6 +39,7 @@ public:
     /* data */
     static std::vector<std::shared_ptr<SocketState>> new_server_sockets_;
     static std::map<int,std::shared_ptr<ImuData>> sockfd_bind_imu_;
+    // static std::sem_t g_sem;
 };
 
 

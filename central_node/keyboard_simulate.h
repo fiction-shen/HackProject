@@ -11,7 +11,11 @@
 #include "imu.h"
 #include "socket_link.h"
 #include "gesture.h"
-// #include <unordered_map>
+#include <semaphore.h>
+#include <chrono>
+#include <unordered_map>
+#include <mutex>
+#include <thread>
 
 
 class PressKey {
@@ -73,149 +77,197 @@ public:
         std::cout << "all keyboard has been release" <<std::endl;
      }
 
-    int Init() {
-        if(imuinit_) {
-            std::cout << "error: key board has been init" <<std::endl;
-            return -1;
-        }
-        //获取手势进行感知量初始化
-//        while(1) 
-        {
-            if(SocketLink::receive_gst_->gstcode == 11){      //预留的手势接口
-                std::cout << "\ngesture is success!" << std::endl;
-                InitValue(SocketLink::receive_imu_); 
-                imuinit_ = true;
-                std::cout << "----keyboard init success!----" << std::endl;
-                usleep(500000);
-                return 0;
-            } else {
-                std::cout << "\r----please make a ok gesture----";
-                std::fflush(stdout);
-            }
-            usleep(500000);
-        } 
-        return -1;
-    }
+//     int Init() {
+//         if(imuinit_) {
+//             std::cout << "warring: key board has been init" <<std::endl;
+//             return -1;
+//         }
+//         //获取手势进行感知量初始化
+// //        while(1) 
+//         {
+// //            if(SocketLink::receive_gst_->gstcode == 11){      //预留的手势接口
+//             //if(1){
+//                 // std::cout << "\ngesture is success!" << std::endl;
+//                 InitValue(SocketLink::receive_imu_); 
+//                 imuinit_ = true;
+//                 gesture_ = 11;
+//                 std::cout << "----keyboard init success!----" << std::endl;
+//                 usleep(500000);
+//                 return 0;
+//             // } 
+//             // else {
+//             //     std::cout << "\r----please make a ok gesture----";
+//             //     std::fflush(stdout);
+//             // }
+//             usleep(500000);
+//         } 
+//         return -1;
+//     }
 
     void InitValue(std::shared_ptr<ImuData> imuData) {
+        if(imuinit_) {
+            std::cout << "---keyboard has been init already---" << std::endl;
+            return;
+        }
+        
         roll_base = imuData->roll;
         yaw_base = imuData->yaw;
         pitch_base = imuData->pitch;
+        imuinit_ = true;
+        std::cout << "----keyboard init success!----" << std::endl;
     }
 
-    void Proc() {
-        while(1) {
-            ProcMsg(SocketLink::receive_imu_);
-            ProGst(SocketLink::receive_gst_);
-        }
-        return;
-    }
+    // void Proc() {
+    //     while(1) {
+    //         ProcMsg(SocketLink::receive_imu_);
+    //         // ProGst();
+    //     }
+    //     return;
+    // }
 
     void ProcMsg(std::shared_ptr<ImuData> imuData) {
-//        while(1) 
+        while(1) 
         {
+            
             if(imuData == nullptr) {
                 std::cout << "----imudata is null----" <<std::endl;
-                return;
             }
             if(!imuinit_) {
-                std::cout << "----keyboard has no init----";
-                Init();
-                return;
+                std::cout << "\r---keyboard has no init----please give me a ok gesture---";
+                std::fflush(stdout);
             }
-            float roll = imuData->roll;
-            float pitch = imuData->pitch;
-            float yaw = imuData->yaw;
-            float del_yaw = yaw - yaw_base + 360;
-            float del_roll = roll - roll_base + 360;
-            del_yaw = fmod(del_yaw, 360);
-            del_roll = fmod(del_roll, 360);
+            else {
+                float roll = imuData->roll;
+                float pitch = imuData->pitch;
+                float yaw = imuData->yaw;
+                int click = (imuData->GPIO)&0x0f;
+                // std::cout << "click=" << click << std::endl; 
+                float del_yaw = yaw - yaw_base + 360;
+                float del_pitch = pitch - pitch_base + 360;
+                del_yaw = fmod(del_yaw, 360);
+                del_pitch = fmod(del_pitch, 360);
 
-            if(del_yaw > 10 && del_yaw < 180) {
-                keyboardset_["J"]->press_ = 1;
-                keyboardset_["K"]->press_ = 0;
-            }
-            else if(del_yaw > 180 && del_yaw < 350) {
-                keyboardset_["J"]->press_ = 0;
-                keyboardset_["K"]->press_ = 1;       
-            }else {
-                keyboardset_["J"]->press_ = 0;
-                keyboardset_["K"]->press_ = 0; 
-            }
-            if(del_roll > 10 && del_roll < 180) {
-                keyboardset_["D"]->press_ = 1;
-                keyboardset_["A"]->press_ = 0;
-            }else if(del_roll > 180 && del_roll < 350) {
-                keyboardset_["D"]->press_ = 0;
-                keyboardset_["A"]->press_ = 1;       
-            }else {
-                keyboardset_["D"]->press_ = 0;
-                keyboardset_["A"]->press_ = 0; 
-            }
+                if(!click) {
+                    keyboardset_["K"]->press_ = 1;
+                } else {
+                    keyboardset_["K"]->press_ = 0;
+                }
 
-            ClickKey();
+                if(del_yaw > 10 && del_yaw < 180) {
+                    keyboardset_["A"]->press_ = 1;
+                    keyboardset_["D"]->press_ = 0;
+                }
+                else if(del_yaw > 180 && del_yaw < 350) {
+                    keyboardset_["A"]->press_ = 0;
+                    keyboardset_["D"]->press_ = 1;       
+                }
+                else {
+                    keyboardset_["A"]->press_ = 0;
+                    keyboardset_["D"]->press_ = 0; 
+                }
+                if(del_pitch > 10 && del_pitch < 180) {
+                    keyboardset_["J"]->press_ = 0;
+                    // keyboardset_["A"]->press_ = 0;
+                }else if(del_pitch > 180 && del_pitch < 350) {
+                    keyboardset_["J"]->press_ = 1;
+                    // keyboardset_["A"]->press_ = 1;       
+                }else {
+                    keyboardset_["J"]->press_ = 0;
+                    // keyboardset_["A"]->press_ = 0; 
+                }
+                auto startTime = std::chrono::high_resolution_clock::now(); 
+                // do something ...
+                //ClickKey();
+                auto endTime = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::high_resolution_clock::now() - startTime).count();
+                auto timeuse = endTime * 0.001;
+                printf("Function Used %f ms\n", timeuse);
+                
+            }
+            
+            std::this_thread::sleep_for(std::chrono::milliseconds(5));  //5ms一次
+            
         }
         return;
     }
 
     void ProGst(std::shared_ptr<GstData> gstdata) {
-        Display* p_display = XOpenDisplay( NULL );
-        KeyCode keycode = NoSymbol;
-        int num = gstdata->gstcode;
-        if (num == gesture_){
-            return;
-        }
-        switch(num) {
-            case 4 : {
-                KeySym tmp = XK_F1;
-                keycode = XKeysymToKeycode(p_display, tmp);
-            }
-                break;//嘘，开关声音
-            case 12 : {
-                KeySym tmp = XK_A;
-                keycode = XKeysymToKeycode(p_display, tmp);
-            }
-                break;//大拇指向左，选择向左
-            case 13 : {
-                KeySym tmp = XK_D;
-                keycode = XKeysymToKeycode(p_display, tmp);
-            }
-                break;//大拇指向右，选择向右
-            case 5 : {
-                KeySym tmp = XK_space;
-                keycode = XKeysymToKeycode(p_display, tmp);
-            }
-                break;//手掌，暂停游戏
-            case 3 : {
-                KeySym tmp = XK_Return;
-                keycode = XKeysymToKeycode(p_display, tmp);
-            }
-                break;//比耶，确定
-            case 14 : {
-                KeySym tmp = XK_Escape;
-                keycode = XKeysymToKeycode(p_display, tmp);
+        while(1) 
+        {
+            dlok.lock();
+
+            int num = gstdata->gstcode;
+            std::cout << "num = " << num << std::endl;
+            if (num != gesture_){
+                Display* p_display = XOpenDisplay( NULL );
+                KeyCode keycode = NoSymbol;
+                switch(num) {
+                    case 11 : {
+                        std::cout << "gest 11\n";
+                        InitValue(SocketLink::receive_imu_);
+                        break;
+                    }   
+                    case 4 : {
+                        std::cout << "gest 4\n";
+                        KeySym tmp = XK_F1;
+                        keycode = XKeysymToKeycode(p_display, tmp);
+                        break;//嘘，开关声音
+                    }     
+                    case 12 : {
+                        std::cout << "gest 12\n";
+                        KeySym tmp = XK_A;
+                        keycode = XKeysymToKeycode(p_display, tmp);
+                        break;//大拇指向左，选择向左
+                    }   
+                    case 13 : {
+                        std::cout << "gest 13\n";
+                        KeySym tmp = XK_D;
+                        keycode = XKeysymToKeycode(p_display, tmp);
+                        break;//大拇指向右，选择向右
+                    }
+                    case 5 : {
+                        std::cout << "gest 5\n";
+                        KeySym tmp = XK_space;;
+                        keycode = XKeysymToKeycode(p_display, tmp);
+                        break;//手掌，暂停游戏
+                    }
+                    case 3 : {
+                        std::cout << "gest 3\n";
+                        KeySym tmp = XK_Return;
+                        keycode = XKeysymToKeycode(p_display, tmp);
+                        break;//比耶，确定
+                    }
+                    case 14 : {
+                        std::cout << "gest 14\n";
+                        KeySym tmp = XK_Escape;
+                        keycode = XKeysymToKeycode(p_display, tmp);
+                        break;//666，离开游戏
+                    }
+                    default : {
+                        break;
+                    }
+                }
+                gesture_ = num;
+                XTestFakeKeyEvent(p_display , keycode , True  , 0 );
+                XFlush( p_display );
+                std::this_thread::sleep_for(std::chrono::milliseconds(1));  //1ms一次
+                XTestFakeKeyEvent(p_display , keycode , False , 0 );
+                XFlush( p_display );
+                std::this_thread::sleep_for(std::chrono::milliseconds(1));  //1ms一次
+                XFlush(p_display);
+                XCloseDisplay(p_display); 
             }
 
-                break;//666，离开游戏
-            default : gesture_ = 0 ; return;
+            
+            dlok.unlock();
+            std::this_thread::sleep_for(std::chrono::milliseconds(10));  //10毫秒执行一次。  
         }
-        gesture_ = num;
-        XTestFakeKeyEvent(p_display , keycode , True  , 0 );
-        XFlush( p_display );
-        usleep(3000);
-        XTestFakeKeyEvent(p_display , keycode , False , 0 );
-        XFlush( p_display );
-        usleep(3000);
-        XFlush(p_display);
-        XCloseDisplay(p_display);
-        // usleep(10000);
         return;
     }
 
     void ClickKey() {
  
         Display* p_display = XOpenDisplay( NULL );
-
+        dlok.lock();
         for(auto it = keyboardset_.begin(); it != keyboardset_.end(); it++) {
             KeySym tmp = it->second->alp_;
             KeyCode keycode = NoSymbol;
@@ -228,27 +280,26 @@ public:
                     it->second->alp_ == XK_Left || it->second->alp_ == XK_Right) {      //长按
                     XTestFakeKeyEvent(p_display , keycode , True  , 0 );
                     XFlush( p_display );
-                    usleep(3000);
+                    std::this_thread::sleep_for(std::chrono::milliseconds(1));
                 } else {
                     XTestFakeKeyEvent( p_display , keycode , True  , 0 ); // 点按
                     XFlush( p_display );
-                    usleep(3000);
+                    std::this_thread::sleep_for(std::chrono::milliseconds(1));
                     XTestFakeKeyEvent( p_display , keycode , False , 0 );
                     XFlush( p_display );
-                    usleep(3000);
+                    std::this_thread::sleep_for(std::chrono::milliseconds(1));
                 }
             } 
             else {
-                XTestFakeKeyEvent( p_display , keycode , False , 0 );   //释放按键
-                XFlush( p_display );
-                usleep(3000);
+                // XTestFakeKeyEvent( p_display , keycode , False , 0 );   //释放按键
+                // XFlush( p_display );
+                // usleep(1000);
             }
 
         }
         XFlush(p_display);
         XCloseDisplay(p_display);
-        // usleep(10000);
-        
+        dlok.unlock();
         return;
     }
 
@@ -264,6 +315,8 @@ protected:
     float roll_base;
     float roll_th;
     int gesture_;
+    std::mutex dlok;
+
 };
 
 #endif
