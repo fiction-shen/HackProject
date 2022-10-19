@@ -24,8 +24,9 @@ int main(int argc, char **argv) {
     // auto funcges = std::bind(&KeyboardBase::ProGst, keyb, std::placeholders::_1);   //gesture处理函数
     // std::future<void> fooimu = std::async(std::launch::async, funcimu, SocketLink::receive_imu_);
     // std::future<void> fooges = std::async(std::launch::async, funcges, SocketLink::receive_gst_);
-    std::thread timu = std::thread(&KeyboardBase::ProcMsg, &keyb, SocketLink::receive_imu_);
     std::thread tgst = std::thread(&KeyboardBase::ProGst, &keyb, SocketLink::receive_gst_);
+    std::thread timu = std::thread(&KeyboardBase::ProcMsg, &keyb, SocketLink::receive_imu_);
+    
 
     while(1)
     {
