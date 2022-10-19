@@ -73,7 +73,7 @@ public:
         keyboardset_.insert(std::make_pair<std::string, PressKey*>("Right", new PressKey(XK_Right)));
         imuinit_ = false;
         gesture_ = 0;
-
+        last_pressed_key = nullptr;
         p_display = XOpenDisplay( NULL );
     }
 
@@ -197,7 +197,7 @@ public:
                 
             }
             
-            std::this_thread::sleep_for(std::chrono::milliseconds(5));  //5ms一次
+            std::this_thread::sleep_for(std::chrono::milliseconds(1));  //10ms一次
             
         }
         return;
@@ -206,7 +206,7 @@ public:
     void ProGst(std::shared_ptr<GstData> gstdata) {
         while(1) 
         {
-            dlok.lock();
+            // dlok.lock();
 
             int num = gstdata->gstcode;
            // std::cout << "num = " << num << std::endl;
@@ -268,11 +268,11 @@ public:
                 // XFlush( p_display );
                 // std::this_thread::sleep_for(std::chrono::milliseconds(1));  //1ms一次
                 // XFlush(p_display);
-                //XCloseDisplay(p_display); 
+                // XCloseDisplay(p_display); 
             }
          
-            dlok.unlock();
-            std::this_thread::sleep_for(std::chrono::milliseconds(10));  //10毫秒执行一次。  
+            // dlok.unlock();
+            std::this_thread::sleep_for(std::chrono::milliseconds(1));  //10毫秒执行一次。  
         }
         return;
     }
@@ -281,19 +281,23 @@ public:
     void ClickKey() {
  
         // Display* p_display = XOpenDisplay( NULL );
-        dlok.lock();
+        // dlok.lock();
+        //释放长按的按键
+        if(last_pressed_key != nullptr && last_pressed_key->press_ == 0) {
+            KeyCode keycode_tmp = NoSymbol;
+            keycode_tmp = XKeysymToKeycode(p_display, last_pressed_key->alp_);
+            XTestFakeKeyEvent(p_display , keycode_tmp , False  , 0 );
+            XFlush( p_display );
+            std::this_thread::sleep_for(std::chrono::milliseconds(1));
+        }
+        
         for(auto it = keyboardset_.begin(); it != keyboardset_.end(); it++) {
             KeySym tmp = it->second->alp_;
             KeyCode keycode = NoSymbol;
+            keycode = XKeysymToKeycode(p_display, tmp);         
 
-            keycode = XKeysymToKeycode(p_display, tmp);
-
-            if (keycode == NoSymbol) {
-                printf("bug is there \n");
-                break;
-            }
-
-            if(it->second->press_ == 1){             
+            if(it->second->press_ == 1){    
+                //一个player应该只有一个长按的按键         
                 if(it->second->alp_ == XK_W || it->second->alp_ == XK_S ||
                     it->second->alp_ == XK_A || it->second->alp_ == XK_D ||
                     it->second->alp_ == XK_Up || it->second->alp_ == XK_Down ||
@@ -302,7 +306,7 @@ public:
                     // steady_clock::time_point time2 = steady_clock::now();
                     // duration<double> time_span = duration_cast<duration<double>>(time2-time1);
                     // printf("It took me %lf ms\n",time_span*1000);           
-
+                    last_pressed_key = it->second;
                     XTestFakeKeyEvent(p_display , keycode , True  , 0 );
                     XFlush( p_display );
                     std::this_thread::sleep_for(std::chrono::milliseconds(1));                       
@@ -320,22 +324,25 @@ public:
                 }
             } 
             else {
-                if(it->second->alp_ == XK_W || it->second->alp_ == XK_S ||
-                    it->second->alp_ == XK_A || it->second->alp_ == XK_D ||
-                    it->second->alp_ == XK_Up || it->second->alp_ == XK_Down ||
-                    it->second->alp_ == XK_Left || it->second->alp_ == XK_Right) {
+                // if(it->second->alp_ == XK_W || it->second->alp_ == XK_S ||
+                //     it->second->alp_ == XK_A || it->second->alp_ == XK_D ||
+                //     it->second->alp_ == XK_Up || it->second->alp_ == XK_Down ||
+                //     it->second->alp_ == XK_Left || it->second->alp_ == XK_Right) {
                        
-                            XTestFakeKeyEvent( p_display , keycode , False , 0 );   //释放按键
-                            XFlush( p_display );
-                            usleep(1000);
+                //             XTestFakeKeyEvent( p_display , keycode , False , 0 );   //释放按键
+                //             XFlush( p_display );
+                //             usleep(1000);
                                         
-                    }      
+                //     }      
             }
 
         }
+        
+        
+
         //XFlush(p_display);
         //XCloseDisplay(p_display);
-        dlok.unlock();
+        // dlok.unlock();
         return;
     }
 
@@ -354,6 +361,7 @@ protected:
     std::mutex dlok;
 
     Display* p_display ;
+    PressKey* last_pressed_key;
 
 };
 
